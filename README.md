@@ -57,6 +57,11 @@ The services can be viewed with:
 . HttpRequester plug-in, on Firefox.
 . Or even the browser window can show the json content but if you want to examine the request/response in more detail you need to use one of these programs. 
 
+### Get more information of whats going on.
+
+I Extensively use the logging service, if you need to view how the request is processed in detail I suggest to open the logs and check it on every request.
+The logs will help to figure out what is happening with the ads, also if you lost an ad check the date of the ad because some ads have five minutes of life.
+
 ### Query parameters.
 The ads are being served to certain channels and to get an ad you must pass a channel parameter.
 
