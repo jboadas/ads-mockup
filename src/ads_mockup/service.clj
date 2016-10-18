@@ -12,9 +12,11 @@
   (ring-resp/response {"ads-mockup server" "Running"}))
 
 ;; define some common interceptors
+;; in this case we only use json-body interceptor
+;; these interceptors are like ring middleware 
 (def common-interceptors [http/json-body])
 
-;; Tabular routes
+;; all routes defined in the rest service
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/api" :get (conj common-interceptors `ads/api)]
               ["/api/ads" :get (conj common-interceptors `ads/get-ads)]

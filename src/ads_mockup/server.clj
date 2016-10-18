@@ -4,6 +4,8 @@
             [io.pedestal.http.route :as route]
             [ads-mockup.service :as service]))
 
+;; this service file was created by the pedestal template
+
 ;; This is an adapted service map, that can be started and stopped
 ;; From the REPL you can call server/start and server/stop on this service
 (defonce runnable-service (server/create-server service/service))

@@ -2,14 +2,28 @@
   (require  [clj-time.core :as t]
             [clj-time.format :as f]))
 
+;; the date needs to be converted into a string because the
+;; json encoder complains.
+;; all dates are in UTC 
+;; this is a formater to use with the date/time of the ads
+;; the formatter only use the date, hour and minutes 
 (def custom-formatter (f/formatter :date-hour-minute))
 
+;; parse a string date into clj-time format
 (defn unparse-date [date]
   (f/unparse custom-formatter date))
 
+;; parse a clj-time date into a string
 (defn parse-date [date]
   (f/parse custom-formatter date))
 
+;; only these channels can request ads
+;; the key of the channel is the URL
+;; :name is a name for the channel
+;; :url the url for the channel must be unique because is used as id
+;; :type the type of channel, only :news, :cooking, :fashion and travel are defined
+;; you can add new types and channels as you want just remmember to include the 3 keys
+;; and if you want to ad a new type just use a keyword for it
 (def channels
   [
    {:name "News Channel"
@@ -41,6 +55,22 @@
     :type :travel}
    ])
 
+;; here we define the ads to serve :limits-per-channel is optional
+;; all othes keys are mandatory, only a few ads are defined to test
+;; just enough the functionality of the code
+;; :id                 -> is the id of the ad and must be unique
+;; :ad-text            -> is a text that simulate the ad
+;; :type               -> the type of the ad to filter with the :type od channel
+;; :country            -> country where the ad can be served
+;; :lang               -> the language of the ad
+;; :gender             -> the target gender of the ad
+;; :age                -> the range og age of the target of the ad
+;; :start-date         -> the starting date when the ad is going to be available
+;; :end-date           -> the date until the ad can be available
+;; :limit-of-views     -> global limit of views that an ad can have from any channel
+;; :limits-per-channel -> this is an optional key and it define the number of views for an individual channel
+
+;; you can ad more ads adding more maps to the vector of ads, just remember the mandatory fields
 (def ADS
   (atom 
    [{:id 1

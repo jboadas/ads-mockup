@@ -5,7 +5,6 @@
             [clj-time.core :as t]
             [clj-time.format :as f]))
 
-
 ;; sends a json response
 (defn send-response [response]
   (log/info (str "*** send-response"))  
@@ -84,15 +83,17 @@
      (t/before? (data/parse-date (:start-date %)) curr-date))
    filtered-ads))
 
+;; decrement the channel available views in the ad being served
 (defn dec-channels [data id channel]
   (log/info (str "***** DECCHANNELS ***** ID : " id " CHANNEL : " channel))
   (mapv (fn [m] (if (= (:id m) id)(update-in m [:limits-per-channel channel] (fn [v] (if (> v 0)(dec v) v))) m)) data))
   
+;; decrement the global views available in the ad
 (defn dec-views [data id]
   (log/info (str "***** DECVIEWS ***** " id))
   (mapv (fn [m] (update-in m [:limits-of-views] (fn [v] (if (= (:id m) id) (if (> v 0) (dec v)) v)))) data))
 
-;; updates the views available for the ad being served
+;; updates the view limits available for the ad being served
 (defn dec-ad-views [channel ad-id]
   (log/info "***** DEC-AD-VIEWS BEFORE*****")
   (log/info (str "SERVING AD - CHANNEL : " channel " AD ID : " ad-id))
@@ -120,7 +121,7 @@
   (let [with-limits-no-channel (filter #(= nil (get (:limits-per-channel %) channel)) filtered-ads)
         with-limits-gt-cero (filter #(> (compare (get (:limits-per-channel %) channel) 0) 0) filtered-ads)
         channel-ads-limits (flatten (merge with-limits-no-channel with-limits-gt-cero))]
-    (log/info "######### el merge : " channel-ads-limits)
+    (log/info "merge results : " channel-ads-limits)
     (if (empty? channel-ads-limits)
       (no-suitable-ad)
       (choose-ad-to-serve filtered-ads channel))))
@@ -138,7 +139,7 @@
 ;; get the ads between a date range, every ad have defined a date interval
 ;; when the ad could be served
 (defn get-ads-by-date [filtered-ads channel]
-  (log/info (str "*** get-ads-by-date"))
+  (log/info (str "*** GET-ADS-BY-DATE"))
   (log/info (with-out-str (clojure.pprint/pprint filtered-ads)))
   (let [curr-date (t/now) ads-by-date (filter-dates curr-date filtered-ads)]
     (if (empty? ads-by-date)
@@ -150,7 +151,7 @@
 ;; to the query parameters this function uses the age range to filter
 ;; these ads that have a concident age between the age interval
 (defn get-ads-by-age [params filtered-ads channel]
-  (log/info (str "*** get-ads-by-age "))
+  (log/info (str "*** GET-ADS-BY-AGE "))
   (log/info (with-out-str (clojure.pprint/pprint filtered-ads)))
   (if-let [age (params :age)]
     (let [ads-by-age (filter-ages age filtered-ads)]
@@ -158,14 +159,14 @@
         (no-suitable-ad)
         (do (let [nparams (dissoc params :age)]
               (when (not-empty nparams)
-                (log/warn (str "*** Warning Unnecesary Params")))
+                (log/warn (str "*** WARNING UNUSED PARAMS" nparams)))
               (get-ads-by-date ads-by-age channel)))))
     (get-ads-by-date filtered-ads channel)))
 
 ;; filter the ads by gender, the genders could be M or F
 ;; the target gender of the advertising is defined on each ad
 (defn get-ads-by-gender [params filtered-ads channel]
-  (log/info (str "*** get-ads-by-gender "))
+  (log/info (str "*** GET-ADS-BY-GENDER "))
   (log/info (with-out-str (clojure.pprint/pprint filtered-ads)))
   (if-let [gender (params :gender)]
     (let [ads-by-gender (filter #(= gender (:gender %)) filtered-ads)]
@@ -180,7 +181,7 @@
 ;; filter the ads by lang if the parameter is provided
 ;; if the parameter isn't provided we continue checkin parameters
 (defn get-ads-by-lang [params filtered-ads channel]
-  (log/info (str "*** get-ads-by-lang "))
+  (log/info (str "*** GET-ADS-BY-LANG "))
   (log/info (with-out-str (clojure.pprint/pprint filtered-ads)))
   (if-let [lang (params :lang)]
     (let [ads-by-lang (filter #(= lang (:lang %)) filtered-ads)]
@@ -195,7 +196,7 @@
 ;; filter the ads by country if the parameter is provided
 ;; if the parameter isn't provided we continue checkin parameters
 (defn get-ads-by-country [params filtered-ads channel]
-  (log/info (str "*** get-ads-by-country "))
+  (log/info (str "*** GET-ADS-BY-COUNTRY "))
   (log/info (with-out-str (clojure.pprint/pprint filtered-ads)))
   (if-let [country (params :country)]
     (let [ads-by-country (filter #(= country (:country %)) filtered-ads)]
@@ -210,7 +211,7 @@
 ;; filter the ads by the type of the channel
 ;; only we can serve ads on a channel of the same type of the ad
 (defn get-ads-by-type [type params channel]
-  (log/info (str "*** get-ads-by-type "))
+  (log/info (str "*** GET-ADS-BY-TYPE "))
   (if-let [ads-by-type (filter #(= type (:type %)) @data/ADS)]
     (do
       (log/info (str "***** FILTER DATA/ADS ******"))
@@ -222,7 +223,8 @@
 ;; Verify if there is a channel parameter and if the parameter exists then
 ;; find the channel in the defined channels to check thet it is valid
 (defn get-channel [params]
-  (log/info (str "*** get-channel "))
+  (log/info (str "*** GET-CHANNEL "))
+  (log/info (str "*** PARAMS : " params))
   (if-let [channel (:channel params)]
     (if-let [curr-channel (get-channel-by-uri channel)]
       (get-ads-by-type (:type curr-channel) (dissoc params :channel) channel)
@@ -232,7 +234,8 @@
 ;; The api handler is where we request the ads
 ;; by default the response from the api is going to be json
 (defn api [request]
-  (log/info (str "*** api process the request "))
+  (log/info (str "*** API PROCESS THE REQUEST "))
+  (log/info (with-out-str (clojure.pprint/pprint request)))
   (let [query-params (:query-params request)]
     (if (= (count query-params) 0)
       (send-response {"Info" "Api endpoint"})
