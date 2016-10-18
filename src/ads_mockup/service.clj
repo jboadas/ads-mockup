@@ -18,8 +18,9 @@
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/api" :get (conj common-interceptors `ads/api)]
               ["/api/ads" :get (conj common-interceptors `ads/get-ads)]
+              ["/api/ads/:id" :get (conj common-interceptors `ads/get-ad)]
               ["/api/channels" :get (conj common-interceptors `ads/get-channels)]
-              })
+              ["/api/channels/:url" :get (conj common-interceptors `ads/get-channel-by-id)]})
 
 ;; Consumed by ads-mockup.server/create-server
 ;; See http/default-interceptors for additional options you can configure
